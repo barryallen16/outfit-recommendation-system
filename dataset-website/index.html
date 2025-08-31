@@ -6,7 +6,6 @@
   <title>Clothes Selection with Iconoir</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/iconoir-icons/iconoir@main/css/iconoir.css" />
-  <script type="module" crossorigin src="/assets/index-CiViQ7a5.js"></script>
 </head>
 <body class="bg-gray-100 flex flex-col items-center min-h-screen relative">
 
@@ -49,6 +48,184 @@
     <!-- Add bottom padding so content isn't hidden under the floating nav -->
     <div id="choices-content" class="grid grid-cols-3 gap-4 p-4 pb-20 overflow-y-auto h-[calc(100%-3rem)]"></div>
   </div>
+
+  <!-- ---------- SCRIPT (non-module) ---------- -->
+  <script>
+    // --- Datasets (men.top expanded as you requested) ---
+    const men = {
+      top: {
+        black: "men-shirts/black.png",
+        brown: "men-shirts/brown.png",
+        green: "men-shirts/green.png",
+        grey: "men-shirts/grey.png",
+        "light-blue": "men-shirts/light-blue.png",
+        maroon: "men-shirts/maroon.png",
+        mustard: "men-shirts/mustard.png",
+        "navy-blue": "men-shirts/navy-blue.png",
+        pink: "men-shirts/pink.png",
+        white: "men-shirts/white.png",
+      },
+      bottom: {
+        black: "men-jeans/black.png",
+        "dark-blue": "men-jeans/dark-blue.png",
+        "light-blue": "men-jeans/light-blue.png",
+      },
+    };
+
+    const women = {
+      top: {
+        black:       "women-kurthi/black.png",
+        brown:       "women-kurthi/brown.png",
+        "light-blue":"women-kurthi/light-blue.png",
+        "navy-blue": "women-kurthi/navy-blue.png",
+        pink:        "women-kurthi/pink.png",
+        red:         "women-kurthi/red.png",
+        white:       "women-kurthi/white.png",
+      },
+      bottom: {
+        black:       "women-jeans/black.png",
+        "dark-blue": "women-jeans/dark-blue.png",
+        "light-blue":"women-jeans/light-blue.png",
+      },
+    };
+
+    const genders = { male: "Male", female: "Female" };
+
+    // --- State ---
+    let currentGender = "male";
+    const selections = {
+      male:   { top: "black", bottom: "black" },
+      female: { top: "black", bottom: "black" },
+    };
+
+    // --- DOM refs ---
+    const sheet   = document.getElementById("choices");
+    const titleEl = document.getElementById("choices-title");
+    const gridEl  = document.getElementById("choices-content");
+    const topImg  = document.getElementById("main-top");
+    const botImg  = document.getElementById("main-bottom");
+
+    // --- Helpers ---
+    function dataset() {
+      return currentGender === "male" ? men : women;
+    }
+
+    function updatePreview() {
+      const ds = dataset();
+      const sel = selections[currentGender];
+      topImg.src = ds.top[sel.top];
+      botImg.src = ds.bottom[sel.bottom];
+    }
+
+    function openChoices(type) {
+      titleEl.textContent = `Select ${type[0].toUpperCase() + type.slice(1)}`;
+      renderChoices(type);
+      // slide up
+      sheet.classList.remove("translate-y-full");
+      sheet.classList.add("translate-y-0");
+    }
+
+    function closeSheet() {
+      sheet.classList.add("translate-y-full");
+      sheet.classList.remove("translate-y-0");
+    }
+
+    function renderChoices(type) {
+      gridEl.innerHTML = "";
+
+      // Decide the data to render
+      let data;
+      if (type === "gender") {
+        data = genders;
+      } else {
+        data = dataset()[type];
+      }
+
+      // Current selection for highlighting
+      const currentKey =
+        type === "gender"
+          ? currentGender
+          : selections[currentGender][type];
+
+      // Build buttons
+      Object.keys(data).forEach((key) => {
+        const btn = document.createElement("button");
+        const isActive = key === currentKey;
+
+        btn.className =
+          "relative border rounded-xl shadow bg-white/50 backdrop-blur-sm p-2 " +
+          "transition ring-offset-2 hover:scale-[1.02] " +
+          (isActive ? "ring-2 ring-blue-500" : "ring-0");
+
+        btn.onclick = () => handleSelect(type, key);
+
+        if (type === "gender") {
+          btn.classList.add("py-3", "font-semibold", "text-gray-800");
+          btn.textContent = data[key];
+          if (isActive) {
+            const mark = document.createElement("i");
+            mark.className = "iconoir-check-circle absolute top-1 right-1 text-xl text-blue-500";
+            btn.appendChild(mark);
+          }
+        } else {
+          const img = document.createElement("img");
+          img.src = data[key];
+          img.alt = `${type} ${key}`;
+          img.className = "w-full object-contain";
+          btn.appendChild(img);
+          if (isActive) {
+            const mark = document.createElement("i");
+            mark.className = "iconoir-check-circle absolute top-1 right-1 text-xl text-blue-500";
+            btn.appendChild(mark);
+          }
+        }
+
+        gridEl.appendChild(btn);
+      });
+    }
+
+    function handleSelect(type, key) {
+      if (type === "gender") {
+        currentGender = key;
+        updatePreview();
+      } else {
+        selections[currentGender][type] = key;
+        updatePreview();
+      }
+      renderChoices(type);
+    }
+
+    // Submit stub (replace with Supabase logic in a module or via fetch)
+    function submitOutfit() {
+      const outfit = {
+        top: selections[currentGender].top,
+        bottom: selections[currentGender].bottom,
+        gender: currentGender,
+        created_at: new Date().toISOString()
+      };
+      console.log('Submitting outfit:', outfit);
+      alert('Outfit saved (console.logged).');
+    }
+
+    // Initial render
+    updatePreview();
+
+    // Close the sheet if user clicks outside
+    document.addEventListener("click", (e) => {
+      const clickedInsideSheet = sheet.contains(e.target);
+      const clickedNav = document.getElementById("floating-nav").contains(e.target);
+      if (!clickedInsideSheet && !clickedNav) {
+        closeSheet();
+      }
+    });
+
+    // Make functions available globally for inline onclick handlers
+    window.openChoices = openChoices;
+    window.closeSheet = closeSheet;
+    window.submitOutfit = submitOutfit;
+    window.handleSelect = handleSelect;
+  </script>
+  <!-- ---------- end script ---------- -->
 
 </body>
 </html>
